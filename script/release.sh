@@ -29,16 +29,6 @@ DMG_PATH="$RELEASE_DIR/$ARTIFACT_BASENAME.dmg"
 CHECKSUM_PATH="$RELEASE_DIR/SHA256SUMS.txt"
 MANIFEST_PATH="$RELEASE_DIR/release-manifest.json"
 DMG_ROOT="$RELEASE_DIR/dmg-root"
-SWIFT_BUILD_OPTIONS=()
-
-if [[ "${SWIFTPM_DISABLE_SANDBOX:-0}" == "1" ]]; then
-  SWIFT_BUILD_OPTIONS+=(--disable-sandbox)
-fi
-
-if [[ -n "${SWIFT_BUILD_EXTRA_ARGS:-}" ]]; then
-  read -r -a EXTRA_SWIFT_BUILD_OPTIONS <<< "$SWIFT_BUILD_EXTRA_ARGS"
-  SWIFT_BUILD_OPTIONS+=("${EXTRA_SWIFT_BUILD_OPTIONS[@]}")
-fi
 
 if [[ -z "${CLANG_MODULE_CACHE_PATH:-}" ]]; then
   export CLANG_MODULE_CACHE_PATH="$ROOT_DIR/.build/module-cache"
@@ -49,6 +39,19 @@ if [[ -z "${TMPDIR:-}" ]]; then
 fi
 
 mkdir -p "$CLANG_MODULE_CACHE_PATH" "$TMPDIR"
+
+swift_build() {
+  if [[ -n "${SWIFT_BUILD_EXTRA_ARGS:-}" ]]; then
+    # Intentionally split extra SwiftPM flags supplied by release automation.
+    set -- $SWIFT_BUILD_EXTRA_ARGS "$@"
+  fi
+
+  if [[ "${SWIFTPM_DISABLE_SANDBOX:-0}" == "1" ]]; then
+    set -- --disable-sandbox "$@"
+  fi
+
+  swift build "$@" --package-path "$ROOT_DIR" -c release
+}
 
 required_resource() {
   if [[ ! -e "$RESOURCE_SOURCE/$1" ]]; then
@@ -263,8 +266,8 @@ if [[ ! -f "$ICON_PATH" ]]; then
   swift "$ROOT_DIR/script/make_app_icon.swift" "$ICON_PATH"
 fi
 
-swift build "${SWIFT_BUILD_OPTIONS[@]}" --package-path "$ROOT_DIR" -c release
-BUILD_BINARY="$(swift build "${SWIFT_BUILD_OPTIONS[@]}" --package-path "$ROOT_DIR" -c release --show-bin-path)/$EXECUTABLE_NAME"
+swift_build
+BUILD_BINARY="$(swift_build --show-bin-path)/$EXECUTABLE_NAME"
 
 rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_MACOS" "$APP_RESOURCES"
