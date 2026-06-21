@@ -25,10 +25,8 @@ WHISPER_ENTITLEMENTS="$RESOURCE_SOURCE/WhisperHelper.entitlements"
 ARCH="$(uname -m)"
 ARTIFACT_BASENAME="LectureTranslator-$APP_VERSION-macOS-$ARCH"
 ZIP_PATH="$RELEASE_DIR/$ARTIFACT_BASENAME.zip"
-DMG_PATH="$RELEASE_DIR/$ARTIFACT_BASENAME.dmg"
 CHECKSUM_PATH="$RELEASE_DIR/SHA256SUMS.txt"
 MANIFEST_PATH="$RELEASE_DIR/release-manifest.json"
-DMG_ROOT="$RELEASE_DIR/dmg-root"
 
 if [[ -z "${CLANG_MODULE_CACHE_PATH:-}" ]]; then
   export CLANG_MODULE_CACHE_PATH="$ROOT_DIR/.build/module-cache"
@@ -200,24 +198,6 @@ sign_app() {
   fi
 }
 
-create_dmg() {
-  rm -rf "$DMG_ROOT"
-  mkdir -p "$DMG_ROOT"
-  /usr/bin/ditto --noextattr --norsrc "$APP_BUNDLE" "$DMG_ROOT/$APP_NAME.app"
-  ln -s /Applications "$DMG_ROOT/Applications"
-  rm -f "$DMG_PATH"
-  if ! hdiutil create -volname "$APP_NAME $APP_VERSION" -srcfolder "$DMG_ROOT" -ov -format UDZO "$DMG_PATH" >/dev/null; then
-    echo "warning: hdiutil create failed; falling back to hdiutil makehybrid." >&2
-    rm -f "$DMG_PATH"
-    hdiutil makehybrid -hfs -hfs-volume-name "$APP_NAME $APP_VERSION" -o "$DMG_PATH" "$DMG_ROOT" >/dev/null
-  fi
-
-  if [[ "$SIGNING_IDENTITY" != "-" ]]; then
-    codesign --force --sign "$SIGNING_IDENTITY" --timestamp "$DMG_PATH"
-  fi
-  rm -rf "$DMG_ROOT"
-}
-
 write_manifest() {
   local created_at signing_label notarization_ready
   created_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
@@ -243,7 +223,6 @@ write_manifest() {
   "artifacts": {
     "app": "$APP_BUNDLE",
     "zip": "$ZIP_PATH",
-    "dmg": "$DMG_PATH",
     "checksums": "$CHECKSUM_PATH"
   }
 }
@@ -296,17 +275,15 @@ codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
 
 rm -f "$ZIP_PATH"
 /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_PATH"
-create_dmg
 
 (
   cd "$RELEASE_DIR"
-  shasum -a 256 "$(basename "$ZIP_PATH")" "$(basename "$DMG_PATH")" > "$CHECKSUM_PATH"
+  shasum -a 256 "$(basename "$ZIP_PATH")" > "$CHECKSUM_PATH"
 )
 write_manifest
 
 echo "Release artifacts:"
 echo "  $APP_BUNDLE"
 echo "  $ZIP_PATH"
-echo "  $DMG_PATH"
 echo "  $CHECKSUM_PATH"
 echo "  $MANIFEST_PATH"

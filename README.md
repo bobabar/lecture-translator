@@ -4,29 +4,36 @@ Lecture Translator is a local macOS app for live lecture translation. It capture
 
 The app is designed for classrooms and lectures where students need low-friction live captions, pause/resume support during breaks, autosaved notes, and exportable transcripts.
 
-## Install
+## Install From Source
 
-Most users should install the app from a DMG instead of building from source.
+Lecture Translator is distributed as source code. Clone the repository, prepare the local Whisper runtime, then build and run the macOS app on your machine.
 
-1. Open the [Releases page](https://github.com/bobabar/lecture-translator/releases).
-2. Download the latest `LectureTranslator-<version>-macOS-<arch>.dmg`.
-3. Open the DMG.
-4. Drag **Lecture Translator** into **Applications**.
-5. First launch only: if macOS says **"Lecture Translator.app" Not Opened**, click **Done**.
-6. Open **System Settings** > **Privacy & Security**.
-7. In the **Security** section, click **Open** or **Open Anyway** for **Lecture Translator**.
-8. Enter your Mac login password if prompted.
-
-This project publishes unsigned community builds so the app can be distributed without a paid Apple Developer certificate. macOS will block a normal double-click first launch because Apple cannot verify unsigned apps. Apple's supported override is **System Settings** > **Privacy & Security** > **Open Anyway**, and that option is only available for a limited time after the blocked launch attempt.
-
-If the Privacy & Security override does not appear, advanced users can remove the download quarantine attribute after verifying that the app came from this repository:
+Install build prerequisites:
 
 ```sh
-xattr -dr com.apple.quarantine "/Applications/Lecture Translator.app"
-open "/Applications/Lecture Translator.app"
+brew install whisper-cpp ggml libomp
 ```
 
-Do not run this command for apps from sources you do not trust.
+Clone and enter the repository:
+
+```sh
+git clone https://github.com/bobabar/lecture-translator.git
+cd lecture-translator
+```
+
+Prepare local Whisper runtime assets and models:
+
+```sh
+./script/prepare_whisper_resources.sh
+```
+
+Build and run the app:
+
+```sh
+./script/build_and_run.sh
+```
+
+This local build flow creates the app on your own Mac. macOS may still request microphone permission the first time the app starts.
 
 ## Features
 
@@ -35,57 +42,8 @@ Do not run this command for apps from sources you do not trust.
 - Whisper model picker with `small` as the recommended lecture model
 - Pause/resume for lecture breaks
 - Autosave, manual save, and export to Markdown or plain text
-- Self-contained release packaging for macOS
+- Source-first macOS build flow
 - No OpenAI key, token billing, server, Electron, or Node.js runtime
-
-## Build From Source
-
-You only need these steps if you want to build the app yourself or create a new release DMG.
-
-Install build prerequisites:
-
-```sh
-brew install whisper-cpp libomp
-```
-
-Prepare local Whisper runtime assets:
-
-```sh
-./script/prepare_whisper_resources.sh
-```
-
-The script copies `whisper-cli`, runtime libraries, and backend libraries from Homebrew, then downloads the default `ggml-base.bin` and `ggml-small.bin` models into `resources/models`.
-
-Build distributable artifacts:
-
-```sh
-./script/release.sh
-```
-
-The release script builds in Swift release mode, bundles `whisper-cli`, bundled models, runtime libraries, licenses, the app icon, and privacy manifest, then creates:
-
-- `dist/release/Lecture Translator.app`
-- `dist/release/LectureTranslator-<version>-macOS-<arch>.zip`
-- `dist/release/LectureTranslator-<version>-macOS-<arch>.dmg`
-- `dist/release/SHA256SUMS.txt`
-- `dist/release/release-manifest.json`
-
-Verify a release:
-
-```sh
-./script/verify_release.sh
-```
-
-## GitHub Releases
-
-Maintainers can publish a downloadable DMG by pushing a version tag:
-
-```sh
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The release workflow builds the unsigned `.app`, `.zip`, `.dmg`, `SHA256SUMS.txt`, and `release-manifest.json`, then attaches them to the GitHub Release.
 
 ## Development
 
@@ -101,7 +59,7 @@ Run a local app bundle:
 ./script/build_and_run.sh
 ```
 
-The repository intentionally does not commit generated release artifacts, Whisper model binaries, `whisper-cli`, or runtime dylibs. Those assets are large and should be generated locally with:
+The repository intentionally does not commit generated app bundles, Whisper model binaries, `whisper-cli`, or runtime dylibs. Those assets are large and should be generated locally with:
 
 ```sh
 ./script/prepare_whisper_resources.sh
@@ -113,31 +71,16 @@ If you already have a prepared `resources` directory, copy it in with:
 WHISPER_RESOURCE_SOURCE=/path/to/resources ./script/prepare_whisper_resources.sh
 ```
 
-## Signing And Notarization
-
-For local testing, the release script falls back to ad-hoc hardened-runtime signing when no Developer ID certificate is installed.
-
-For low-friction public distribution outside the Mac App Store, install a `Developer ID Application` certificate, then run:
-
-```sh
-./script/release.sh
-NOTARYTOOL_PROFILE="your-notary-profile" ./script/notarize.sh
-```
-
-You can also notarize with `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_SPECIFIC_PASSWORD` environment variables instead of a notarytool keychain profile.
-
-Without Developer ID signing and notarization, macOS Gatekeeper will continue to show first-launch warnings for downloaded builds. The unsigned DMG is useful for open-source testers and technical users, but a signed and notarized build is the expected path for non-technical student distribution.
-
 ## Bundled Runtime
 
-Release builds are self-contained after `script/prepare_whisper_resources.sh` has populated `resources/bin`, `resources/lib`, `resources/libexec`, and `resources/models`.
+Local app bundles are self-contained after `script/prepare_whisper_resources.sh` has populated `resources/bin`, `resources/lib`, `resources/libexec`, and `resources/models`.
 
 Default models:
 
 - `ggml-small.bin`
 - `ggml-base.bin`
 
-Additional Whisper `.bin` models can be added to `resources/models` before running the release script. Models are downloaded from the `ggerganov/whisper.cpp` model repository on Hugging Face.
+Additional Whisper `.bin` models can be added to `resources/models` before building a local app bundle. Models are downloaded from the `ggerganov/whisper.cpp` model repository on Hugging Face.
 
 ## License
 

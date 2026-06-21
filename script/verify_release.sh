@@ -52,7 +52,7 @@ fi
 if spctl -a -vv "$APP_PATH"; then
   echo "Gatekeeper assessment accepted."
 else
-  echo "Gatekeeper assessment rejected. This is expected for ad-hoc builds; use Developer ID signing and notarization for public distribution."
+  echo "Gatekeeper assessment rejected. This is expected for ad-hoc local builds."
 fi
 
 echo "Release verification completed for $APP_PATH"
