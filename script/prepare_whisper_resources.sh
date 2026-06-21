@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+RESOURCE_DIR="$ROOT_DIR/resources"
+MODEL_REPOSITORY_URL="${MODEL_REPOSITORY_URL:-https://huggingface.co/ggerganov/whisper.cpp/resolve/main}"
+WHISPER_MODELS="${WHISPER_MODELS:-base small}"
+COPY_SOURCE="${WHISPER_RESOURCE_SOURCE:-}"
+SKIP_MODEL_DOWNLOAD="${SKIP_MODEL_DOWNLOAD:-0}"
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  ./script/prepare_whisper_resources.sh
+
+Environment:
+  WHISPER_RESOURCE_SOURCE=/path/to/resources  Copy an existing prepared resource tree.
+  WHISPER_CPP_PREFIX=/path/to/whisper-cpp     Use a custom whisper.cpp install prefix.
+  WHISPER_MODELS="base small"                 Models to download from Hugging Face.
+  SKIP_MODEL_DOWNLOAD=1                       Copy runtime assets only.
+USAGE
+}
+
+mkdir -p "$RESOURCE_DIR/bin" "$RESOURCE_DIR/lib" "$RESOURCE_DIR/libexec" "$RESOURCE_DIR/models" "$RESOURCE_DIR/licenses"
+
+copy_tree_if_present() {
+  local source_root="$1"
+  local name="$2"
+  if [[ -d "$source_root/$name" ]]; then
+    rsync -a --delete "$source_root/$name/" "$RESOURCE_DIR/$name/"
+  fi
+}
+
+copy_matching_files() {
+  local source_root="$1"
+  local destination="$2"
+  local pattern="$3"
+  local copied=1
+
+  while IFS= read -r file; do
+    cp -p "$file" "$destination/"
+    copied=0
+  done < <(find "$source_root" -type f -name "$pattern" 2>/dev/null)
+
+  return "$copied"
+}
+
+find_whisper_prefix() {
+  if [[ -n "${WHISPER_CPP_PREFIX:-}" ]]; then
+    echo "$WHISPER_CPP_PREFIX"
+    return
+  fi
+
+  if command -v brew >/dev/null 2>&1; then
+    brew --prefix whisper-cpp 2>/dev/null || true
+  fi
+}
+
+download_model() {
+  local model_name="$1"
+  local file_name="ggml-$model_name.bin"
+  local destination="$RESOURCE_DIR/models/$file_name"
+  local partial="$destination.partial"
+
+  if [[ -f "$destination" ]]; then
+    echo "model already exists: $file_name"
+    return
+  fi
+
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "error: curl is required to download $file_name" >&2
+    exit 1
+  fi
+
+  echo "downloading $file_name"
+  curl --fail --location --continue-at - --output "$partial" "$MODEL_REPOSITORY_URL/$file_name"
+  mv "$partial" "$destination"
+}
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+if [[ -n "$COPY_SOURCE" ]]; then
+  if [[ ! -d "$COPY_SOURCE" ]]; then
+    echo "error: WHISPER_RESOURCE_SOURCE does not exist: $COPY_SOURCE" >&2
+    exit 1
+  fi
+
+  copy_tree_if_present "$COPY_SOURCE" bin
+  copy_tree_if_present "$COPY_SOURCE" lib
+  copy_tree_if_present "$COPY_SOURCE" libexec
+  copy_tree_if_present "$COPY_SOURCE" models
+  copy_tree_if_present "$COPY_SOURCE" licenses
+else
+  WHISPER_PREFIX="$(find_whisper_prefix)"
+  if [[ -z "$WHISPER_PREFIX" || ! -d "$WHISPER_PREFIX" ]]; then
+    echo "error: whisper.cpp was not found. Install it with: brew install whisper-cpp" >&2
+    exit 1
+  fi
+
+  WHISPER_CLI="$(find "$WHISPER_PREFIX" -type f -name whisper-cli 2>/dev/null | head -n 1)"
+  if [[ -z "$WHISPER_CLI" ]]; then
+    echo "error: whisper-cli was not found under $WHISPER_PREFIX" >&2
+    exit 1
+  fi
+
+  cp -p "$WHISPER_CLI" "$RESOURCE_DIR/bin/whisper-cli"
+  chmod +x "$RESOURCE_DIR/bin/whisper-cli"
+
+  copy_matching_files "$WHISPER_PREFIX" "$RESOURCE_DIR/lib" "libwhisper*.dylib" || true
+  copy_matching_files "$WHISPER_PREFIX" "$RESOURCE_DIR/lib" "libggml*.dylib" || true
+  copy_matching_files "$WHISPER_PREFIX" "$RESOURCE_DIR/libexec" "libggml*.so" || true
+
+  if command -v brew >/dev/null 2>&1; then
+    LIBOMP_PREFIX="$(brew --prefix libomp 2>/dev/null || true)"
+    if [[ -n "$LIBOMP_PREFIX" && -d "$LIBOMP_PREFIX" ]]; then
+      copy_matching_files "$LIBOMP_PREFIX" "$RESOURCE_DIR/lib" "libomp.dylib" || true
+    fi
+  fi
+fi
+
+if [[ "$SKIP_MODEL_DOWNLOAD" != "1" ]]; then
+  for model in $WHISPER_MODELS; do
+    download_model "$model"
+  done
+fi
+
+echo "Prepared Whisper resources in $RESOURCE_DIR"
