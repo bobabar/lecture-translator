@@ -4,6 +4,18 @@ Lecture Translator is a local macOS app for live lecture translation. It capture
 
 The app is designed for classrooms and lectures where students need low-friction live captions, pause/resume support during breaks, autosaved notes, and exportable transcripts.
 
+## Install
+
+Most users should install the app from a DMG instead of building from source.
+
+1. Open the [Releases page](https://github.com/bobabar/lecture-translator/releases).
+2. Download the latest `LectureTranslator-<version>-macOS-<arch>.dmg`.
+3. Open the DMG.
+4. Drag **Lecture Translator** into **Applications**.
+5. First launch only: right-click **Lecture Translator** and choose **Open**.
+
+This project publishes unsigned community builds so the app can be distributed without a paid Apple Developer certificate. macOS may warn that the developer cannot be verified on first launch; right-clicking and choosing **Open** is the expected workaround for unsigned releases.
+
 ## Features
 
 - Local Whisper transcription and English translation
@@ -14,7 +26,9 @@ The app is designed for classrooms and lectures where students need low-friction
 - Self-contained release packaging for macOS
 - No OpenAI key, token billing, server, Electron, or Node.js runtime
 
-## Release Build
+## Build From Source
+
+You only need these steps if you want to build the app yourself or create a new release DMG.
 
 Install build prerequisites:
 
@@ -49,6 +63,17 @@ Verify a release:
 ```sh
 ./script/verify_release.sh
 ```
+
+## GitHub Releases
+
+Maintainers can publish a downloadable DMG by pushing a version tag:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow builds the unsigned `.app`, `.zip`, `.dmg`, `SHA256SUMS.txt`, and `release-manifest.json`, then attaches them to the GitHub Release.
 
 ## Development
 
