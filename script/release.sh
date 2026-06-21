@@ -125,6 +125,60 @@ sign_path() {
   fi
 }
 
+local_dependency_path() {
+  local code_path="$1"
+  local dependency_name="$2"
+
+  case "$code_path" in
+    "$APP_RESOURCES/bin/"*)
+      echo "@executable_path/../lib/$dependency_name"
+      ;;
+    "$APP_RESOURCES/lib/"*)
+      echo "@loader_path/$dependency_name"
+      ;;
+    "$APP_RESOURCES/libexec/"*)
+      echo "@loader_path/../lib/$dependency_name"
+      ;;
+    "$APP_MACOS/"*)
+      echo "@executable_path/../Resources/lib/$dependency_name"
+      ;;
+    *)
+      echo "@rpath/$dependency_name"
+      ;;
+  esac
+}
+
+relink_code_path() {
+  local code_path="$1"
+
+  if [[ "$code_path" == "$APP_RESOURCES/lib/"*.dylib ]]; then
+    install_name_tool -id "@loader_path/$(basename "$code_path")" "$code_path" 2>/dev/null || true
+  fi
+
+  while IFS= read -r dependency; do
+    local dependency_name replacement
+    dependency_name="$(basename "$dependency")"
+    if [[ -z "$dependency_name" || ! -f "$APP_RESOURCES/lib/$dependency_name" ]]; then
+      continue
+    fi
+
+    case "$dependency" in
+      @rpath/*|/opt/homebrew/opt/*/lib/*|/usr/local/opt/*/lib/*|/opt/homebrew/Cellar/*/lib/*|/usr/local/Cellar/*/lib/*)
+        replacement="$(local_dependency_path "$code_path" "$dependency_name")"
+        install_name_tool -change "$dependency" "$replacement" "$code_path" 2>/dev/null || true
+        ;;
+    esac
+  done < <(otool -L "$code_path" 2>/dev/null | awk 'NR > 1 {print $1}')
+}
+
+relink_bundled_runtime() {
+  relink_code_path "$APP_RESOURCES/bin/whisper-cli"
+
+  while IFS= read -r -d '' code_path; do
+    relink_code_path "$code_path"
+  done < <(find "$APP_RESOURCES" -type f \( -name "*.dylib" -o -name "*.so" \) -print0)
+}
+
 sign_app() {
   while IFS= read -r -d '' code_path; do
     sign_path "$code_path"
@@ -225,6 +279,7 @@ rsync -a --delete "$RESOURCE_SOURCE/licenses" "$APP_RESOURCES/"
 cp "$ICON_PATH" "$APP_RESOURCES/AppIcon.icns"
 cp "$PRIVACY_MANIFEST" "$APP_RESOURCES/PrivacyInfo.xcprivacy"
 write_info_plist
+relink_bundled_runtime
 
 /usr/bin/xattr -cr "$APP_BUNDLE" >/dev/null 2>&1 || true
 

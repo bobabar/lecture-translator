@@ -23,6 +23,14 @@ USAGE
 
 mkdir -p "$RESOURCE_DIR/bin" "$RESOURCE_DIR/lib" "$RESOURCE_DIR/libexec" "$RESOURCE_DIR/models" "$RESOURCE_DIR/licenses"
 
+clean_runtime_assets() {
+  find "$RESOURCE_DIR/bin" "$RESOURCE_DIR/lib" "$RESOURCE_DIR/libexec" \
+    -maxdepth 1 \
+    -type f \
+    ! -name ".gitkeep" \
+    -delete
+}
+
 copy_tree_if_present() {
   local source_root="$1"
   local name="$2"
@@ -40,9 +48,16 @@ copy_matching_files() {
   while IFS= read -r file; do
     cp -p "$file" "$destination/"
     copied=0
-  done < <(find "$source_root" -type f -name "$pattern" 2>/dev/null)
+  done < <(find -L "$source_root" -type f -name "$pattern" 2>/dev/null)
 
   return "$copied"
+}
+
+brew_prefix() {
+  local formula="$1"
+  if command -v brew >/dev/null 2>&1; then
+    brew --prefix "$formula" 2>/dev/null || true
+  fi
 }
 
 find_whisper_prefix() {
@@ -51,9 +66,22 @@ find_whisper_prefix() {
     return
   fi
 
-  if command -v brew >/dev/null 2>&1; then
-    brew --prefix whisper-cpp 2>/dev/null || true
+  brew_prefix whisper-cpp
+}
+
+find_whisper_cli() {
+  local whisper_prefix="$1"
+  local cli=""
+
+  if [[ -n "$whisper_prefix" && -d "$whisper_prefix" ]]; then
+    cli="$(find -L "$whisper_prefix" -type f -name whisper-cli 2>/dev/null | head -n 1)"
   fi
+
+  if [[ -z "$cli" ]] && command -v whisper-cli >/dev/null 2>&1; then
+    cli="$(command -v whisper-cli)"
+  fi
+
+  echo "$cli"
 }
 
 download_model() {
@@ -82,6 +110,8 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   exit 0
 fi
 
+clean_runtime_assets
+
 if [[ -n "$COPY_SOURCE" ]]; then
   if [[ ! -d "$COPY_SOURCE" ]]; then
     echo "error: WHISPER_RESOURCE_SOURCE does not exist: $COPY_SOURCE" >&2
@@ -100,24 +130,30 @@ else
     exit 1
   fi
 
-  WHISPER_CLI="$(find "$WHISPER_PREFIX" -type f -name whisper-cli 2>/dev/null | head -n 1)"
+  WHISPER_CLI="$(find_whisper_cli "$WHISPER_PREFIX")"
   if [[ -z "$WHISPER_CLI" ]]; then
-    echo "error: whisper-cli was not found under $WHISPER_PREFIX" >&2
+    echo "error: whisper-cli was not found. Install it with: brew install whisper-cpp" >&2
     exit 1
   fi
 
   cp -p "$WHISPER_CLI" "$RESOURCE_DIR/bin/whisper-cli"
   chmod +x "$RESOURCE_DIR/bin/whisper-cli"
 
-  copy_matching_files "$WHISPER_PREFIX" "$RESOURCE_DIR/lib" "libwhisper*.dylib" || true
-  copy_matching_files "$WHISPER_PREFIX" "$RESOURCE_DIR/lib" "libggml*.dylib" || true
+  copy_matching_files "$WHISPER_PREFIX" "$RESOURCE_DIR/lib" "libwhisper.1.dylib" || true
+  copy_matching_files "$WHISPER_PREFIX" "$RESOURCE_DIR/lib" "libggml.0.dylib" || true
+  copy_matching_files "$WHISPER_PREFIX" "$RESOURCE_DIR/lib" "libggml-base.0.dylib" || true
   copy_matching_files "$WHISPER_PREFIX" "$RESOURCE_DIR/libexec" "libggml*.so" || true
 
-  if command -v brew >/dev/null 2>&1; then
-    LIBOMP_PREFIX="$(brew --prefix libomp 2>/dev/null || true)"
-    if [[ -n "$LIBOMP_PREFIX" && -d "$LIBOMP_PREFIX" ]]; then
-      copy_matching_files "$LIBOMP_PREFIX" "$RESOURCE_DIR/lib" "libomp.dylib" || true
-    fi
+  GGML_PREFIX="$(brew_prefix ggml)"
+  if [[ -n "$GGML_PREFIX" && -d "$GGML_PREFIX" ]]; then
+    copy_matching_files "$GGML_PREFIX" "$RESOURCE_DIR/lib" "libggml.0.dylib" || true
+    copy_matching_files "$GGML_PREFIX" "$RESOURCE_DIR/lib" "libggml-base.0.dylib" || true
+    copy_matching_files "$GGML_PREFIX" "$RESOURCE_DIR/libexec" "libggml*.so" || true
+  fi
+
+  LIBOMP_PREFIX="$(brew_prefix libomp)"
+  if [[ -n "$LIBOMP_PREFIX" && -d "$LIBOMP_PREFIX" ]]; then
+    copy_matching_files "$LIBOMP_PREFIX" "$RESOURCE_DIR/lib" "libomp.dylib" || true
   fi
 fi
 

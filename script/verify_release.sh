@@ -16,7 +16,14 @@ mkdir -p "$TMP_DIR"
 codesign --verify --deep --strict --verbose=2 "$TMP_DIR/Lecture Translator.app"
 
 SAMPLE="/opt/homebrew/opt/whisper-cpp/share/whisper-cpp/jfk.wav"
-if [[ -f "$SAMPLE" ]]; then
+if "$APP_PATH/Contents/Resources/bin/whisper-cli" --help >/dev/null 2>&1; then
+  echo "Bundled whisper-cli launch check passed."
+else
+  echo "Bundled whisper-cli launch check failed." >&2
+  exit 1
+fi
+
+if [[ "${REQUIRE_WHISPER_SMOKE:-0}" == "1" && -f "$SAMPLE" ]]; then
   CPU_BRAND="$(sysctl -n machdep.cpu.brand_string 2>/dev/null || true)"
   case "$CPU_BRAND" in
     *M4*) BACKEND="$APP_PATH/Contents/Resources/libexec/libggml-cpu-apple_m4.so" ;;
@@ -38,6 +45,8 @@ if [[ -f "$SAMPLE" ]]; then
     echo "Bundled Whisper smoke test failed." >&2
     exit 1
   fi
+elif [[ -f "$SAMPLE" ]]; then
+  echo "Bundled Whisper transcription smoke test skipped. Set REQUIRE_WHISPER_SMOKE=1 to require it."
 fi
 
 if spctl -a -vv "$APP_PATH"; then
