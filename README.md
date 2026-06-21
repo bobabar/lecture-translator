@@ -12,9 +12,21 @@ Most users should install the app from a DMG instead of building from source.
 2. Download the latest `LectureTranslator-<version>-macOS-<arch>.dmg`.
 3. Open the DMG.
 4. Drag **Lecture Translator** into **Applications**.
-5. First launch only: right-click **Lecture Translator** and choose **Open**.
+5. First launch only: if macOS says **"Lecture Translator.app" Not Opened**, click **Done**.
+6. Open **System Settings** > **Privacy & Security**.
+7. In the **Security** section, click **Open** or **Open Anyway** for **Lecture Translator**.
+8. Enter your Mac login password if prompted.
 
-This project publishes unsigned community builds so the app can be distributed without a paid Apple Developer certificate. macOS may warn that the developer cannot be verified on first launch; right-clicking and choosing **Open** is the expected workaround for unsigned releases.
+This project publishes unsigned community builds so the app can be distributed without a paid Apple Developer certificate. macOS will block a normal double-click first launch because Apple cannot verify unsigned apps. Apple's supported override is **System Settings** > **Privacy & Security** > **Open Anyway**, and that option is only available for a limited time after the blocked launch attempt.
+
+If the Privacy & Security override does not appear, advanced users can remove the download quarantine attribute after verifying that the app came from this repository:
+
+```sh
+xattr -dr com.apple.quarantine "/Applications/Lecture Translator.app"
+open "/Applications/Lecture Translator.app"
+```
+
+Do not run this command for apps from sources you do not trust.
 
 ## Features
 
@@ -105,7 +117,7 @@ WHISPER_RESOURCE_SOURCE=/path/to/resources ./script/prepare_whisper_resources.sh
 
 For local testing, the release script falls back to ad-hoc hardened-runtime signing when no Developer ID certificate is installed.
 
-For public distribution outside the Mac App Store, install a `Developer ID Application` certificate, then run:
+For low-friction public distribution outside the Mac App Store, install a `Developer ID Application` certificate, then run:
 
 ```sh
 ./script/release.sh
@@ -113,6 +125,8 @@ NOTARYTOOL_PROFILE="your-notary-profile" ./script/notarize.sh
 ```
 
 You can also notarize with `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_SPECIFIC_PASSWORD` environment variables instead of a notarytool keychain profile.
+
+Without Developer ID signing and notarization, macOS Gatekeeper will continue to show first-launch warnings for downloaded builds. The unsigned DMG is useful for open-source testers and technical users, but a signed and notarized build is the expected path for non-technical student distribution.
 
 ## Bundled Runtime
 
