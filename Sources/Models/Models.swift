@@ -14,8 +14,8 @@ struct SourceLanguage: Identifiable, Hashable, Sendable {
     let label: String
 
     static let all: [SourceLanguage] = [
+        .init(id: "zh", label: "Chinese (Mandarin)"),
         .init(id: "auto", label: "Auto detect"),
-        .init(id: "zh", label: "Chinese"),
         .init(id: "en", label: "English"),
         .init(id: "es", label: "Spanish"),
         .init(id: "fr", label: "French"),
@@ -38,9 +38,9 @@ struct LatencyProfile: Identifiable, Hashable, Sendable {
     let overlap: Double
 
     static let all: [LatencyProfile] = [
-        .init(id: "fast", label: "Fast", seconds: 4, overlap: 0.7),
-        .init(id: "balanced", label: "Balanced", seconds: 6, overlap: 1.0),
-        .init(id: "accurate", label: "Accurate", seconds: 8, overlap: 1.2)
+        .init(id: "fast", label: "Fast", seconds: 6, overlap: 1.5),
+        .init(id: "balanced", label: "Lecture", seconds: 12, overlap: 2.5),
+        .init(id: "accurate", label: "High Accuracy", seconds: 18, overlap: 4.0)
     ]
 
     static let balanced = all[1]

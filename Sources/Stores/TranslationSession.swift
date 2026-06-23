@@ -27,7 +27,7 @@ final class TranslationSession: ObservableObject {
     @Published var selectedModelID = "" {
         didSet { persistSettings() }
     }
-    @Published var sourceLanguage = "auto" {
+    @Published var sourceLanguage = "zh" {
         didSet { persistSettings() }
     }
     @Published var latencyProfileID = LatencyProfile.balanced.id {
@@ -45,6 +45,7 @@ final class TranslationSession: ObservableObject {
     private let audioCapture = AudioCaptureService()
     private let settingsStore = SettingsStore()
     private let documentStore = LectureDocumentStore()
+    private let maxQueuedChunks = 5
 
     private var queue: [AudioChunk] = []
     private var isProcessing = false
@@ -123,7 +124,7 @@ final class TranslationSession: ObservableObject {
             : runtimeStatus.defaultModelID ?? ""
         sourceLanguage = SourceLanguage.all.contains(where: { $0.id == settings.sourceLanguage })
             ? settings.sourceLanguage
-            : "auto"
+            : "zh"
         latencyProfileID = LatencyProfile.all.contains(where: { $0.id == settings.latencyProfile })
             ? settings.latencyProfile
             : LatencyProfile.balanced.id
@@ -316,7 +317,7 @@ final class TranslationSession: ObservableObject {
         let chunk = AudioChunk(id: chunkCounter, wavData: wavData, modelID: model.id)
         chunkCounter += 1
 
-        if queue.count >= 2 {
+        if queue.count >= maxQueuedChunks {
             queue.removeFirst()
             droppedChunks += 1
         }

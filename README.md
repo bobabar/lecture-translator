@@ -45,6 +45,10 @@ This local build flow creates the app on your own Mac. macOS may still request m
 - Source-first macOS build flow
 - No OpenAI key, token billing, server, Electron, or Node.js runtime
 
+## Lecture Accuracy
+
+For Mandarin lectures, leave Source set to `Chinese (Mandarin)` and use the `Lecture` or `High Accuracy` profile. Auto-detect is available for mixed-language use, but fixed-language transcription gives Whisper much better results in a classroom.
+
 ## Development
 
 Build the Swift package:
