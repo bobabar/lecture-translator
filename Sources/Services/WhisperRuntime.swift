@@ -32,17 +32,20 @@ final class WhisperRuntime {
     private let knownModels: [String: KnownModel] = [
         "ggml-tiny.bin": .init(label: "Tiny", tier: 1, detail: "Fastest, rough captions"),
         "ggml-base.bin": .init(label: "Base", tier: 2, detail: "Fast fallback"),
-        "ggml-small.bin": .init(label: "Small", tier: 3, detail: "Recommended for lectures"),
+        "ggml-small.bin": .init(label: "Small", tier: 3, detail: "Fast lecture model for slower Macs"),
         "ggml-medium.bin": .init(label: "Medium", tier: 4, detail: "Higher accuracy, slower"),
-        "ggml-large-v3-turbo.bin": .init(label: "Large v3 Turbo", tier: 5, detail: "Best local quality if available"),
-        "ggml-large-v3.bin": .init(label: "Large v3", tier: 6, detail: "Highest quality, slowest")
+        "ggml-large-v3-turbo.bin": .init(label: "Large v3 Turbo", tier: 5, detail: "High accuracy, faster than Large v3"),
+        "ggml-large-v3.bin": .init(label: "Large v3", tier: 6, detail: "Best multilingual quality, slowest")
     ]
 
     func status() -> RuntimeStatus {
         let root = resourceRoot()
         let whisperURL = whisperURL(resourceRoot: root)
         let models = discoverModels(resourceRoot: root)
-        let defaultModelID = models.first(where: { $0.id == "ggml-small.bin" })?.id
+        let defaultModelID = models.first(where: { $0.id == "ggml-large-v3.bin" })?.id
+            ?? models.first(where: { $0.id == "ggml-large-v3-turbo.bin" })?.id
+            ?? models.first(where: { $0.id == "ggml-small.bin" })?.id
+            ?? models.first(where: { $0.id == "ggml-medium.bin" })?.id
             ?? models.first(where: { $0.id == "ggml-base.bin" })?.id
             ?? models.first?.id
 

@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RESOURCE_DIR="$ROOT_DIR/resources"
 MODEL_REPOSITORY_URL="${MODEL_REPOSITORY_URL:-https://huggingface.co/ggerganov/whisper.cpp/resolve/main}"
-WHISPER_MODELS="${WHISPER_MODELS:-base small}"
+WHISPER_MODELS="${WHISPER_MODELS:-base small large-v3}"
 COPY_SOURCE="${WHISPER_RESOURCE_SOURCE:-}"
 SKIP_MODEL_DOWNLOAD="${SKIP_MODEL_DOWNLOAD:-0}"
 
@@ -16,7 +16,7 @@ Usage:
 Environment:
   WHISPER_RESOURCE_SOURCE=/path/to/resources  Copy an existing prepared resource tree.
   WHISPER_CPP_PREFIX=/path/to/whisper-cpp     Use a custom whisper.cpp install prefix.
-  WHISPER_MODELS="base small"                 Models to download from Hugging Face.
+  WHISPER_MODELS="base small large-v3"        Models to download from Hugging Face.
   SKIP_MODEL_DOWNLOAD=1                       Copy runtime assets only.
 USAGE
 }
@@ -184,6 +184,7 @@ Default release models:
 
 - `ggml-base.bin`
 - `ggml-small.bin`
+- `ggml-large-v3.bin`
 
 You can add additional `ggml-*.bin` files here before running `./script/release.sh`.
 README

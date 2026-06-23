@@ -16,7 +16,7 @@ final class SettingsStore {
         static let includeSourceTranscript = "includeSourceTranscript"
     }
 
-    private let currentSchemaVersion = 2
+    private let currentSchemaVersion = 3
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -24,12 +24,10 @@ final class SettingsStore {
     }
 
     func load(defaultModelID: String?) -> AppSettings {
-        let schemaVersion = defaults.integer(forKey: Key.schemaVersion)
         let storedSourceLanguage = defaults.string(forKey: Key.sourceLanguage)
-        let migratedSourceLanguage = schemaVersion < currentSchemaVersion
-            && (storedSourceLanguage == nil || storedSourceLanguage == "auto")
-            ? "zh"
-            : storedSourceLanguage ?? "zh"
+        let migratedSourceLanguage = storedSourceLanguage == nil || storedSourceLanguage == "auto"
+            ? SourceLanguage.fallbackID
+            : storedSourceLanguage ?? SourceLanguage.fallbackID
 
         return AppSettings(
             selectedModelID: defaults.string(forKey: Key.selectedModelID) ?? defaultModelID ?? "",

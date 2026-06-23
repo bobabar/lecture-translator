@@ -12,5 +12,6 @@ Default release models:
 
 - `ggml-base.bin`
 - `ggml-small.bin`
+- `ggml-large-v3.bin`
 
 You can add additional `ggml-*.bin` files here before running `./script/release.sh`.

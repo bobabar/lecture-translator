@@ -25,16 +25,24 @@ final class WhisperService: @unchecked Sendable {
             try? FileManager.default.removeItem(at: audioURL)
         }
 
+        let language = SourceLanguage.resolve(sourceLanguage)
         let sourceText = includeSourceTranscript
-            ? try runWhisper(audioURL: audioURL, model: model, language: sourceLanguage, translate: false)
+            ? try runWhisper(audioURL: audioURL, model: model, language: language, translate: false)
             : ""
 
-        let translatedText = try runWhisper(
-            audioURL: audioURL,
-            model: model,
-            language: sourceLanguage,
-            translate: true
-        )
+        let translatedText: String
+        if language.id == "en" {
+            translatedText = sourceText.isEmpty
+                ? try runWhisper(audioURL: audioURL, model: model, language: language, translate: false)
+                : sourceText
+        } else {
+            translatedText = try runWhisper(
+                audioURL: audioURL,
+                model: model,
+                language: language,
+                translate: true
+            )
+        }
 
         return TranscriptionResult(
             translatedText: translatedText,
@@ -45,7 +53,7 @@ final class WhisperService: @unchecked Sendable {
     private func runWhisper(
         audioURL: URL,
         model: WhisperModel,
-        language: String,
+        language: SourceLanguage,
         translate: Bool
     ) throws -> String {
         let status = runtime.status()
@@ -61,16 +69,16 @@ final class WhisperService: @unchecked Sendable {
             "-f",
             audioURL.path,
             "-l",
-            SourceLanguage.all.contains(where: { $0.id == language }) ? language : "auto",
+            language.id,
             "-t",
             String(max(2, min(ProcessInfo.processInfo.processorCount, 8))),
             "-nt",
-            "-np"
+            "-np",
+            "-sns",
+            "--prompt",
+            translate ? language.translationPrompt : language.transcriptionPrompt,
+            "--carry-initial-prompt"
         ]
-
-        if let prompt = prompt(for: language, translate: translate) {
-            process.arguments?.append(contentsOf: ["--prompt", prompt])
-        }
 
         if translate {
             process.arguments?.append("-tr")
@@ -113,22 +121,5 @@ final class WhisperService: @unchecked Sendable {
         }
 
         return normalizedWhisperOutput(stdout)
-    }
-
-    private func prompt(for language: String, translate: Bool) -> String? {
-        switch (language, translate) {
-        case ("zh", false):
-            return "以下是一段中文课堂讲座录音。请用简体中文准确转写普通话内容，保留课程术语、专有名词和数字。"
-        case ("zh", true):
-            return "This is a Mandarin Chinese university lecture. Translate the speech into clear, faithful English while preserving technical terms and numbers."
-        case ("auto", false):
-            return "This is a classroom lecture. Transcribe the spoken source language accurately and preserve terminology, names, and numbers."
-        case ("auto", true):
-            return "This is a classroom lecture. Translate the speech into clear, faithful English while preserving terminology, names, and numbers."
-        default:
-            return translate
-                ? "Translate this classroom lecture into clear, faithful English while preserving terminology, names, and numbers."
-                : "Transcribe this classroom lecture accurately and preserve terminology, names, and numbers."
-        }
     }
 }

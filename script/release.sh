@@ -232,6 +232,7 @@ JSON
 required_resource "bin/whisper-cli"
 required_resource "models/ggml-small.bin"
 required_resource "models/ggml-base.bin"
+required_resource "models/ggml-large-v3.bin"
 required_resource "lib/libwhisper.1.dylib"
 required_resource "lib/libggml.0.dylib"
 required_resource "libexec/libggml-cpu-apple_m1.so"

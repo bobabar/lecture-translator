@@ -27,7 +27,7 @@ final class TranslationSession: ObservableObject {
     @Published var selectedModelID = "" {
         didSet { persistSettings() }
     }
-    @Published var sourceLanguage = "zh" {
+    @Published var sourceLanguage = SourceLanguage.fallbackID {
         didSet { persistSettings() }
     }
     @Published var latencyProfileID = LatencyProfile.balanced.id {
@@ -124,7 +124,7 @@ final class TranslationSession: ObservableObject {
             : runtimeStatus.defaultModelID ?? ""
         sourceLanguage = SourceLanguage.all.contains(where: { $0.id == settings.sourceLanguage })
             ? settings.sourceLanguage
-            : "zh"
+            : SourceLanguage.fallbackID
         latencyProfileID = LatencyProfile.all.contains(where: { $0.id == settings.latencyProfile })
             ? settings.latencyProfile
             : LatencyProfile.balanced.id
