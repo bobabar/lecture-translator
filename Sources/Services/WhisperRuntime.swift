@@ -34,7 +34,7 @@ final class WhisperRuntime {
         "ggml-base.bin": .init(label: "Base", tier: 2, detail: "Fast fallback"),
         "ggml-small.bin": .init(label: "Small", tier: 3, detail: "Fast lecture model for slower Macs"),
         "ggml-medium.bin": .init(label: "Medium", tier: 4, detail: "Higher accuracy, slower"),
-        "ggml-large-v3-turbo.bin": .init(label: "Large v3 Turbo", tier: 5, detail: "High accuracy, faster than Large v3"),
+        "ggml-large-v3-turbo.bin": .init(label: "Large v3 Turbo", tier: 5, detail: "Recommended for 16 GB Macs"),
         "ggml-large-v3.bin": .init(label: "Large v3", tier: 6, detail: "Best multilingual quality, slowest")
     ]
 
@@ -42,8 +42,8 @@ final class WhisperRuntime {
         let root = resourceRoot()
         let whisperURL = whisperURL(resourceRoot: root)
         let models = discoverModels(resourceRoot: root)
-        let defaultModelID = models.first(where: { $0.id == "ggml-large-v3.bin" })?.id
-            ?? models.first(where: { $0.id == "ggml-large-v3-turbo.bin" })?.id
+        let defaultModelID = models.first(where: { $0.id == "ggml-large-v3-turbo.bin" })?.id
+            ?? models.first(where: { $0.id == "ggml-large-v3.bin" })?.id
             ?? models.first(where: { $0.id == "ggml-small.bin" })?.id
             ?? models.first(where: { $0.id == "ggml-medium.bin" })?.id
             ?? models.first(where: { $0.id == "ggml-base.bin" })?.id

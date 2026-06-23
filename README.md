@@ -39,7 +39,7 @@ This local build flow creates the app on your own Mac. macOS may still request m
 
 - Local Whisper transcription and English translation
 - Multilingual source-language selection
-- Whisper model picker with `large-v3` for best quality and `small` for faster Macs
+- Whisper model picker with `large-v3-turbo` recommended for 16 GB Macs and `small` for lower latency
 - Pause/resume for lecture breaks
 - Autosave, manual save, and export to Markdown or plain text
 - Source-first macOS build flow
@@ -49,7 +49,7 @@ This local build flow creates the app on your own Mac. macOS may still request m
 
 Select the spoken lecture language before starting. The app intentionally does not expose Whisper auto-detect because fixed-language transcription gives more reliable source transcripts and translations in a classroom.
 
-For Mandarin lectures, leave Source set to `Chinese (Mandarin)` and use the `Lecture` or `High Accuracy` profile. Use `Large v3` for the best multilingual quality when your Mac can keep up; switch to `Small` if you need lower latency.
+For Mandarin lectures, leave Source set to `Chinese (Mandarin)` and use the `Lecture` or `High Accuracy` profile. Use `Large v3 Turbo` on 16 GB Macs; switch to `Small` if you need lower latency.
 
 ## Development
 
@@ -85,7 +85,7 @@ Default models:
 
 - `ggml-base.bin`
 - `ggml-small.bin`
-- `ggml-large-v3.bin`
+- `ggml-large-v3-turbo.bin`
 
 Additional Whisper `.bin` models can be added to `resources/models` before building a local app bundle. Models are downloaded from the `ggerganov/whisper.cpp` model repository on Hugging Face.
 
