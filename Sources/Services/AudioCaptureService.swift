@@ -2,11 +2,14 @@
 import Foundation
 
 enum CaptureError: LocalizedError {
+    case noInputDevice
     case microphoneDenied
     case unsupportedAudioFormat
 
     var errorDescription: String? {
         switch self {
+        case .noInputDevice:
+            return "No microphone or audio input device is available. Connect an input device, then try again."
         case .microphoneDenied:
             return "Microphone access is required to translate live speech."
         case .unsupportedAudioFormat:
@@ -47,6 +50,12 @@ final class AudioCaptureService: @unchecked Sendable {
         let nextEngine = AVAudioEngine()
         let input = nextEngine.inputNode
         let format = input.inputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            throw CaptureError.noInputDevice
+        }
+        guard format.commonFormat == .pcmFormatFloat32 else {
+            throw CaptureError.unsupportedAudioFormat
+        }
         inputSampleRate = format.sampleRate
 
         input.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
@@ -90,8 +99,10 @@ final class AudioCaptureService: @unchecked Sendable {
     private func ensureMicrophoneAccess() throws {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized:
+            try ensureAudioInputAvailable()
             return
         case .notDetermined:
+            try ensureAudioInputAvailable()
             let semaphore = DispatchSemaphore(value: 0)
             let result = PermissionResult()
             AVCaptureDevice.requestAccess(for: .audio) { allowed in
@@ -102,8 +113,15 @@ final class AudioCaptureService: @unchecked Sendable {
             if !result.granted {
                 throw CaptureError.microphoneDenied
             }
+            try ensureAudioInputAvailable()
         default:
             throw CaptureError.microphoneDenied
+        }
+    }
+
+    private func ensureAudioInputAvailable() throws {
+        guard AVCaptureDevice.default(for: .audio) != nil else {
+            throw CaptureError.noInputDevice
         }
     }
 
