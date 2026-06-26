@@ -6,7 +6,7 @@ EXECUTABLE_NAME="LectureTranslatorNative"
 BUNDLE_ID="${BUNDLE_ID:-com.brownsugar.lecturetranslator}"
 APP_VERSION="${APP_VERSION:-0.1.0}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
-MIN_SYSTEM_VERSION="${MIN_SYSTEM_VERSION:-14.0}"
+MIN_SYSTEM_VERSION="${MIN_SYSTEM_VERSION:-15.0}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist"

@@ -5,7 +5,7 @@ MODE="${1:-run}"
 APP_NAME="Lecture Translator"
 EXECUTABLE_NAME="LectureTranslatorNative"
 BUNDLE_ID="${BUNDLE_ID:-com.brownsugar.lecturetranslator}"
-MIN_SYSTEM_VERSION="14.0"
+MIN_SYSTEM_VERSION="15.0"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist"

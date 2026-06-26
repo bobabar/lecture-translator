@@ -58,3 +58,32 @@ func normalizedWhisperOutput(_ text: String) -> String {
         .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
         .trimmingCharacters(in: .whitespacesAndNewlines)
 }
+
+func extractTranslationUnits(from text: String, flush: Bool, maximumCharacters: Int = 600) -> (units: [String], remainder: String) {
+    let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmedText.isEmpty else {
+        return ([], "")
+    }
+
+    let terminators: Set<Character> = [".", "!", "?", "。", "！", "？", "।", "؛"]
+    var units: [String] = []
+    var current = ""
+
+    for character in trimmedText {
+        current.append(character)
+        let candidate = current.trimmingCharacters(in: .whitespacesAndNewlines)
+        if terminators.contains(character) || candidate.count >= maximumCharacters {
+            if !candidate.isEmpty {
+                units.append(candidate)
+            }
+            current = ""
+        }
+    }
+
+    let remainder = current.trimmingCharacters(in: .whitespacesAndNewlines)
+    if flush, !remainder.isEmpty {
+        return (units + [remainder], "")
+    }
+
+    return (units, remainder)
+}

@@ -4,7 +4,7 @@ import SwiftUI
 @main
 struct LectureTranslatorNativeApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var session = TranslationSession()
+    @StateObject private var session = LectureTranslationSession()
 
     var body: some Scene {
         WindowGroup("Lecture Translator", id: "main") {

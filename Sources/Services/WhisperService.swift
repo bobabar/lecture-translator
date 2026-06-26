@@ -12,8 +12,7 @@ final class WhisperService: @unchecked Sendable {
         wavData: Data,
         chunkID: Int,
         model: WhisperModel,
-        sourceLanguage: String,
-        includeSourceTranscript: Bool
+        sourceLanguage: String
     ) throws -> TranscriptionResult {
         let tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("lecture-translator", isDirectory: true)
@@ -26,26 +25,9 @@ final class WhisperService: @unchecked Sendable {
         }
 
         let language = SourceLanguage.resolve(sourceLanguage)
-        let sourceText = includeSourceTranscript
-            ? try runWhisper(audioURL: audioURL, model: model, language: language, translate: false)
-            : ""
-
-        let translatedText: String
-        if language.id == "en" {
-            translatedText = sourceText.isEmpty
-                ? try runWhisper(audioURL: audioURL, model: model, language: language, translate: false)
-                : sourceText
-        } else {
-            translatedText = try runWhisper(
-                audioURL: audioURL,
-                model: model,
-                language: language,
-                translate: true
-            )
-        }
+        let sourceText = try runWhisper(audioURL: audioURL, model: model, language: language)
 
         return TranscriptionResult(
-            translatedText: translatedText,
             sourceText: sourceText
         )
     }
@@ -53,8 +35,7 @@ final class WhisperService: @unchecked Sendable {
     private func runWhisper(
         audioURL: URL,
         model: WhisperModel,
-        language: SourceLanguage,
-        translate: Bool
+        language: SourceLanguage
     ) throws -> String {
         let status = runtime.status()
         guard let whisperURL = status.whisperURL else {
@@ -76,13 +57,9 @@ final class WhisperService: @unchecked Sendable {
             "-np",
             "-sns",
             "--prompt",
-            translate ? language.translationPrompt : language.transcriptionPrompt,
+            language.transcriptionPrompt,
             "--carry-initial-prompt"
         ]
-
-        if translate {
-            process.arguments?.append("-tr")
-        }
 
         var environment = ProcessInfo.processInfo.environment
         if let backendURL = runtime.backendURL(for: whisperURL) {

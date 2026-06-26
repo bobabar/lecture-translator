@@ -101,8 +101,13 @@ struct SourceLanguage: Identifiable, Hashable, Sendable {
         all.first { $0.id == id } ?? all[0]
     }
 
-    var translationPrompt: String {
-        "This is a \(promptName) classroom lecture. Translate the speech into clear, faithful English while preserving technical terms, names, and numbers."
+    var appleLanguageIdentifier: String {
+        switch id {
+        case "zh":
+            return "zh-Hans"
+        default:
+            return id
+        }
     }
 }
 
@@ -146,7 +151,6 @@ struct RuntimeStatus: Sendable {
 }
 
 struct TranscriptionResult: Sendable {
-    let translatedText: String
     let sourceText: String
 }
 

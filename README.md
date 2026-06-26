@@ -1,12 +1,14 @@
 # Lecture Translator
 
-Lecture Translator is a local macOS app for live lecture translation. It captures microphone audio, runs Whisper locally, translates multilingual speech into English captions, and saves lecture output for review.
+Lecture Translator is a local macOS 15+ app for live lecture translation. It captures microphone audio, runs Whisper locally for source transcription, uses Apple Translation for English captions, and saves lecture output for review.
 
 The app is designed for classrooms and lectures where students need low-friction live captions, pause/resume support during breaks, autosaved notes, and exportable transcripts.
 
 ## Install From Source
 
 Lecture Translator is distributed as source code. Clone the repository, prepare the local Whisper runtime, then build and run the macOS app on your machine.
+
+Requires macOS 15 or newer. Apple Translation may prompt macOS to prepare or download language support for the selected source language.
 
 Install build prerequisites:
 
@@ -38,6 +40,7 @@ This local build flow creates the app on your own Mac. macOS may still request m
 ## Features
 
 - Local Whisper transcription and English translation
+- Apple Translation text translation instead of Whisper direct audio translation
 - Multilingual source-language selection
 - Whisper model picker with `large-v3-turbo` recommended for 16 GB Macs and `small` for lower latency
 - Pause/resume for lecture breaks

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject var session: TranslationSession
+    @ObservedObject var session: LectureTranslationSession
 
     var body: some View {
         Form {

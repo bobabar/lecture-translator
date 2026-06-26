@@ -1,9 +1,17 @@
 import SwiftUI
+@preconcurrency import Translation
 
 struct ContentView: View {
-    @ObservedObject var session: TranslationSession
+    @ObservedObject var session: LectureTranslationSession
 
     var body: some View {
+        content
+            .translationTask(session.appleTranslationConfiguration) { appleSession in
+                await session.processAppleTranslation(with: appleSession)
+            }
+    }
+
+    private var content: some View {
         VStack(spacing: 14) {
             HeaderView(session: session)
             StatusStripView(session: session)

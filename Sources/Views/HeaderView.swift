@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HeaderView: View {
-    @ObservedObject var session: TranslationSession
+    @ObservedObject var session: LectureTranslationSession
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -33,7 +33,7 @@ struct HeaderView: View {
 }
 
 private struct CaptureButton: View {
-    @ObservedObject var session: TranslationSession
+    @ObservedObject var session: LectureTranslationSession
 
     var body: some View {
         Button {
@@ -50,7 +50,7 @@ private struct CaptureButton: View {
 }
 
 private struct ControlsView: View {
-    @ObservedObject var session: TranslationSession
+    @ObservedObject var session: LectureTranslationSession
 
     var body: some View {
         HStack(spacing: 8) {

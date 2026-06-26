@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct StatusStripView: View {
-    @ObservedObject var session: TranslationSession
+    @ObservedObject var session: LectureTranslationSession
 
     var body: some View {
         HStack(spacing: 8) {
